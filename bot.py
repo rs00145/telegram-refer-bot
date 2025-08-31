@@ -1,8 +1,9 @@
 import os
 import telebot
 from telebot import types
+from flask import Flask, request
 
-# 🔹 Bot Config (Heroku Config Vars se set hoga)
+# 🔹 Bot Config (Render/Heroku ke Environment Variables me set hoga)
 TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL = os.getenv("CHANNEL")
 
@@ -32,7 +33,8 @@ def start(message):
             referrals[referrer] = referrals.get(referrer, 0) + 1
             bot.send_message(referrer, f"🎉 Aapko ek new referral mila! Total: {referrals[referrer]}")
 
-    bot.reply_to(message,
+    bot.reply_to(
+        message,
         f"👋 Welcome {message.from_user.first_name}!\n\n"
         f"🔗 Aapka referral link:\n"
         f"https://t.me/{bot.get_me().username}?start={user_id}\n\n"
@@ -53,5 +55,21 @@ def callback_query(call):
     if call.data == "check":
         start(call.message)
 
-print("🤖 Bot started...")
-bot.polling()
+# Flask App for Webhook
+app = Flask(__name__)
+
+@app.route('/' + TOKEN, methods=['POST'])
+def getMessage():
+    json_str = request.stream.read().decode("UTF-8")
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return "OK", 200
+
+@app.route("/")
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url="https://YOUR_RENDER_URL.onrender.com/" + TOKEN)
+    return "Bot started ✅", 200
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
