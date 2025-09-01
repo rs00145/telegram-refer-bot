@@ -66,10 +66,10 @@ def getMessage():
     return "OK", 200
 
 @app.route("/")
-def webhook():
+def set_webhook():
     bot.remove_webhook()
-    bot.set_webhook(url="https://YOUR_RENDER_URL.onrender.com/" + TOKEN)
-    return "Bot started ✅", 200
+    bot.set_webhook(url=f"https://{os.getenv('RENDER_URL')}/" + TOKEN)
+    return "🤖 Bot webhook set ho gaya!", 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
